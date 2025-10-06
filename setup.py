@@ -9,39 +9,39 @@ os_name = platform.system().lower()
 
 torch_package_urls = {
     '3.10': {
-        'linux': 'torch-2.3.0%2Bcu121-cp310-cp310-linux_x86_64.whl',
-        'windows': 'torch-2.3.0%2Bcu121-cp310-cp310-win_amd64.whl'
+        'linux': 'torch-2.8.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp310-cp310-win_amd64.whl'
     },
     '3.11': {
-        'linux': 'torch-2.3.0%2Bcu121-cp311-cp311-linux_x86_64.whl',
-        'windows': 'torch-2.3.0%2Bcu121-cp311-cp311-win_amd64.whl'
+        'linux': 'torch-2.8.0%2Bcu128-cp311-cp311-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp311-cp311-win_amd64.whl'
     },
     '3.8': {
-        'linux': 'torch-2.3.0%2Bcu121-cp38-cp38-linux_x86_64.whl',
-        'windows': 'torch-2.3.0%2Bcu121-cp38-cp38-win_amd64.whl'
+        'linux': 'torch-2.8.0%2Bcu128-cp38-cp38-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp38-cp38-win_amd64.whl'
     },
     '3.9': {
-        'linux': 'torch-2.3.0%2Bcu121-cp39-cp39-linux_x86_64.whl',
-        'windows': 'torch-2.3.0%2Bcu121-cp39-cp39-win_amd64.whl'
+        'linux': 'torch-2.8.0%2Bcu128-cp39-cp39-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp39-cp39-win_amd64.whl'
     }
 }
 
 torchvision_package_urls = {
     '3.10': {
-        'linux': 'torchvision-0.18.0%2Bcu121-cp310-cp310-linux_x86_64.whl',
-        'windows': 'torchvision-0.18.0%2Bcu121-cp310-cp310-win_amd64.whl'
+        'linux': 'torchvision-0.23.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp310-cp310-win_amd64.whl'
     },
     '3.11': {
-        'linux': 'torchvision-0.18.0%2Bcu121-cp311-cp311-linux_x86_64.whl',
-        'windows': 'torchvision-0.18.0%2Bcu121-cp311-cp311-win_amd64.whl'
+        'linux': 'torchvision-0.23.0%2Bcu128-cp311-cp311-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp311-cp311-win_amd64.whl'
     },
     '3.8': {
-        'linux': 'torchvision-0.18.0%2Bcu121-cp38-cp38-linux_x86_64.whl',
-        'windows': 'torchvision-0.18.0%2Bcu121-cp38-cp38-win_amd64.whl'
+        'linux': 'torchvision-0.23.0%2Bcu128-cp38-cp38-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp38-cp38-win_amd64.whl'
     },
     '3.9': {
-        'linux': 'torchvision-0.18.0%2Bcu121-cp39-cp39-linux_x86_64.whl',
-        'windows': 'torchvision-0.18.0%2Bcu121-cp39-cp39-win_amd64.whl'
+        'linux': 'torchvision-0.23.0%2Bcu128-cp39-cp39-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp39-cp39-win_amd64.whl'
     }
 }
 
@@ -51,8 +51,8 @@ if python_version in torch_package_urls:
 else:
     sys.exit(f"Unsupported Python version: {python_version}")
 
-torch_path = f"https://download.pytorch.org/whl/cu121/{torch_url}"
-torchvision_path = f"https://download.pytorch.org/whl/cu121/{torchvision_url}"
+torch_path = f"https://download.pytorch.org/whl/cu128/{torch_url}"
+torchvision_path = f"https://download.pytorch.org/whl/cu128/{torchvision_url}"
 
 # IMPORTANT:
 # 1. all dependencies should be listed here with their version requirements if any
@@ -71,7 +71,7 @@ _deps = [
     'gdown>=4.7.1',
     'py3d>=0.0.87',
     'librosa>=0.10.0.post2',
-    'numpy>=1.26.4',
+    'numpy==1.26.4',
     'opencv-python-headless',
     'timm>=0.6.13',
     'transformers>=4.40.2',
@@ -82,12 +82,12 @@ _deps = [
     'streamlit>=1.27.2',
     'torchsde>=0.2.5',
     'fastapi>=0.100.0',
-    'diffusers>=0.27.2',
+    'diffusers==0.30.0',
     'accelerate>=0.29.3',
     'python-decouple>=3.8',
     'mutagen>=1.47.0',
     'imageio[ffmpeg]>=2.34.1',
-    'xformers==0.0.26.post1',
+    'xformers>=0.0.26.post1',
     'tensorrt>=10.0.1',
     'onnx_graphsurgeon>=0.5.2',
     'onnx>=1.16.0',
