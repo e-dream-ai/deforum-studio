@@ -18,7 +18,7 @@ deps = {
     "numpy": "numpy==1.24.2",
     "opencv-python-headless": "opencv-python-headless",
     "basicsr": "basicsr==1.4.2",
-    "timm": "timm==0.6.13",
+    "timm": "timm==1.0.20",
     "transformers": "transformers",
     "omegaconf": "omegaconf==2.3.0",
     "aiohttp": "aiohttp==3.8.6",

@@ -73,7 +73,7 @@ _deps = [
     'librosa>=0.10.0.post2',
     'numpy==1.26.4',
     'opencv-python-headless',
-    'timm>=0.6.13',
+    'timm==1.0.20',
     'transformers>=4.40.2',
     'omegaconf>=2.3.0',
     'aiohttp>=3.9.3',
