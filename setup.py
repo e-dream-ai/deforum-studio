@@ -74,7 +74,7 @@ _deps = [
     'numpy==1.26.4',
     'opencv-python-headless',
     'timm==1.0.20',
-    'transformers>=4.40.2',
+    'transformers>=4.40.2,<4.44.0',
     'omegaconf>=2.3.0',
     'aiohttp>=3.9.3',
     'psutil>=5.9.6',
