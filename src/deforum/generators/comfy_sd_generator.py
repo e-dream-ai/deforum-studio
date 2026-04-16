@@ -341,8 +341,8 @@ class ComfyDeforumGenerator:
         settings_dict["s_churn"] = 0.0
         settings_dict["t_min"] = 0.0
         settings_dict["t_max"] = 0.0
-        self.model = settings_node.apply(self.model, **settings_dict)[0]
-        self.clip = settings_node.apply(self.clip, **settings_dict)[0]
+        self.model = settings_node.run(self.model, **settings_dict)[0]
+        self.clip = settings_node.run(self.clip, **settings_dict)[0]
         self.model_loaded = True
 
     def load_lora_from_civitai(self,
