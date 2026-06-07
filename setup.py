@@ -83,7 +83,7 @@ _deps = [
     'torchsde>=0.2.5',
     'fastapi>=0.100.0',
     'diffusers==0.30.0',
-    'compel==2.0.6',
+    'compel==2.0.3',
     'accelerate>=0.29.3',
     'python-decouple>=3.8',
     'mutagen>=1.47.0',
