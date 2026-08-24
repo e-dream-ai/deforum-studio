@@ -8,18 +8,23 @@ prompts and other conditioning factors.
 """
 import os
 import secrets
+from typing import Any, Dict, Sequence, Tuple
+
 import numpy as np
 import torch
 from PIL import Image
 
-from .comfy_utils import ensure_comfy
-from .rng_noise_generator import ImageRNGNoise
 from deforum.utils.deforum_cond_utils import blend_tensors
 from deforum.utils.logging_config import logger
+from deforum.utils.lora import LoraSpec
+
 from ..utils.constants import config
 from ..utils.model_download import (
     download_from_civitai_by_version_id,
 )
+from .comfy_utils import ensure_comfy
+from .rng_noise_generator import ImageRNGNoise
+
 
 def pil2tensor(image):
     """
@@ -71,8 +76,10 @@ class ComfyDeforumGenerator:
         self.clip_node = None
         self.sampler_node = None
         self.pipe = None
-        self.loaded_lora = None
-        self.model_loaded = None
+        self.loaded_loras: Dict[str, Dict[str, torch.Tensor]] = {}
+        self.model_loaded = False
+        self._configured_loras: Tuple[LoraSpec, ...] = ()
+        self._loras_applied = False
         self.rng = None
         self.optimized = False
         self.current_optimization = ""
@@ -81,6 +88,13 @@ class ComfyDeforumGenerator:
         self.device = "cuda"
         self.optimizations = []
         self.initialize_optimizations()
+
+    def configure_loras(self, loras: Sequence[LoraSpec]) -> None:
+        configured = tuple(loras)
+        if self.model_loaded and configured != self._configured_loras:
+            raise RuntimeError("LoRAs cannot change after generation has started")
+        self._configured_loras = configured
+        self._loras_applied = False
 
     def initialize_optimizations(self):
         """
@@ -316,6 +330,43 @@ class ComfyDeforumGenerator:
             self.clip.clip_layer(-2)
             self.apply_smz_optimizations()
 
+    def _apply_configured_loras(self) -> None:
+        if self._loras_applied:
+            return
+        if self.model is None or self.clip is None:
+            raise RuntimeError("The base model must be loaded before applying LoRAs")
+
+        for lora in self._configured_loras:
+            self.model, self.clip = self.load_lora(
+                self.model,
+                self.clip,
+                str(lora.path),
+                lora.strength_model,
+                lora.strength_clip,
+            )
+            logger.info(
+                f"Applied LoRA '{lora.alias}' at strength {lora.strength_model:g}"
+            )
+
+        self.cond = None
+        self.n_cond = None
+        self.prompt = ""
+        self.n_prompt = ""
+        self._loras_applied = True
+
+    def _load_lora_state(self, lora_path: str) -> Dict[str, torch.Tensor]:
+        import comfy
+
+        cached = self.loaded_loras.get(lora_path)
+        if cached is not None:
+            return cached
+
+        loaded: Dict[str, torch.Tensor] = comfy.utils.load_torch_file(
+            lora_path, safe_load=True
+        )
+        self.loaded_loras[lora_path] = loaded
+        return loaded
+
     def apply_smz_optimizations(self):
         """
         Apply SMZ optimizations to the model and CLIP.
@@ -345,10 +396,12 @@ class ComfyDeforumGenerator:
         self.clip = settings_node.run(self.clip, **settings_dict)[0]
         self.model_loaded = True
 
-    def load_lora_from_civitai(self,
-                               lora_id="",
-                               model_strength=0.0,
-                               clip_strength=0.0):
+    def load_lora_from_civitai(
+        self,
+        lora_id: str = "",
+        model_strength: float = 0.0,
+        clip_strength: float = 0.0,
+    ) -> None:
         """
         Load a LoRA model from CivitAI.
 
@@ -360,24 +413,13 @@ class ComfyDeforumGenerator:
         cache_dir = os.path.join(config.root_path, "models")
         os.makedirs(cache_dir, exist_ok=True)
         try:
-            import comfy
             filename = download_from_civitai_by_version_id(
                 model_id=lora_id, destination=cache_dir, force_download=False
             )
             lora_path = os.path.join(cache_dir, filename)
-            lora = None
-            if self.loaded_lora is not None:
-                if self.loaded_lora[0] == lora_path:
-                    lora = self.loaded_lora[1]
-                else:
-                    temp = self.loaded_lora
-                    self.loaded_lora = None
-                    del temp
+            lora = self._load_lora_state(lora_path)
 
-            if lora is None:
-                lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
-                self.loaded_lora = (lora_path, lora)
-
+            import comfy
             self.model, self.clip = comfy.sd.load_lora_for_models(
                 self.model, self.clip, lora, model_strength, clip_strength
             )
@@ -386,12 +428,14 @@ class ComfyDeforumGenerator:
                 f'LORA Loading failed from CivitAI, please check wether the version id: {str(lora_id)} is correct')
             logger.debug(str(e))
 
-    def load_lora(self,
-                  model,
-                  clip,
-                  lora_path,
-                  strength_model,
-                  strength_clip):
+    def load_lora(
+        self,
+        model: Any,
+        clip: Any,
+        lora_path: str,
+        strength_model: float,
+        strength_clip: float,
+    ) -> Tuple[Any, Any]:
         """
         Load a LoRA model from a specified path.
 
@@ -408,17 +452,7 @@ class ComfyDeforumGenerator:
         import comfy
         if strength_model == 0 and strength_clip == 0:
             return model, clip
-        lora = None
-        if self.loaded_lora is not None:
-            if self.loaded_lora[0] == lora_path:
-                lora = self.loaded_lora[1]
-            else:
-                temp = self.loaded_lora
-                self.loaded_lora = None
-                del temp
-        if lora is None:
-            lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
-            self.loaded_lora = (lora_path, lora)
+        lora = self._load_lora_state(lora_path)
         model_lora, clip_lora = comfy.sd.load_lora_for_models(
             model, clip, lora, strength_model, strength_clip
         )
@@ -499,7 +533,7 @@ class ComfyDeforumGenerator:
 
         if not self.model_loaded:
             self.load_model()
-            # self.load_lora_from_civitai('424720', 1.0, 1.0)
+        self._apply_configured_loras()
 
         if use_optimization:
             self.optimize_model(use_optimization)
@@ -691,11 +725,22 @@ class ComfyDeforumGenerator:
         Cleanup resources and unload the model from the GPU.
         """
         self.optimized = False
-        self.model.unpatch_model(device_to="cpu")
-        self.vae.first_stage_model.to("cpu")
-        del self.model
-        del self.vae
-        del self.clip
+        self.current_optimization = ""
+        if self.model is not None:
+            self.model.unpatch_model(device_to="cpu")
+        if self.vae is not None:
+            self.vae.first_stage_model.to("cpu")
+        self.model = None
+        self.vae = None
+        self.clip = None
+        self.model_loaded = False
+        self.loaded_loras.clear()
+        self._configured_loras = ()
+        self._loras_applied = False
+        self.cond = None
+        self.n_cond = None
+        self.prompt = ""
+        self.n_prompt = ""
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
 

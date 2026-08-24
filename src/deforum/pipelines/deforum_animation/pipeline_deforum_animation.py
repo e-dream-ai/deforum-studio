@@ -34,6 +34,7 @@ from ...utils.constants import config
 from ...utils.deforum_hybrid_animation import hybrid_generation
 from ...utils.deforum_logger_util import Logger
 from ...utils.image_utils import load_image
+from ...utils.lora import prepare_lora_prompts
 from ...utils.resume_vars import get_resume_vars
 from ...utils.sdxl_styles import STYLE_NAMES, apply_style
 from ...utils.string_utils import split_weighted_subprompts
@@ -62,8 +63,9 @@ from .animation_helpers import (
     post_gen_cls,
     post_hybrid_composite_cls,
     rife_interpolate_cls,
+    run_adiff_cls,
     save_video_cls,
-    set_contrast_image, run_adiff_cls,
+    set_contrast_image,
 )
 from .animation_params import auto_to_comfy
 from .parseq_adapter import ParseqAdapter
@@ -250,8 +252,16 @@ class DeforumAnimationPipeline(DeforumBase):
             else:
                 prompt_series[int(numexpr.evaluate(i))] = prompt
         prompt_series = prompt_series.ffill().bfill()
-        self.gen.prompt_series = prompt_series
-        
+        cleaned_prompts, loras = prepare_lora_prompts(
+            tuple(str(prompt) for prompt in prompt_series.tolist()),
+            config.lora_dir,
+        )
+        self.gen.prompt_series = pd.Series(cleaned_prompts, index=prompt_series.index)
+        if isinstance(self.generator, ComfyDeforumGenerator):
+            self.generator.configure_loras(loras)
+        elif loras:
+            raise ValueError("The configured generator does not support LoRAs")
+
         # TODO WTF was this monstrosity?
         #self.gen.max_frames -= 5
 
@@ -881,7 +891,5 @@ def get_next_prompt_and_blend(current_index, prompt_series, blend_type="exponent
     blend_value = blend_values[1]  # Blend value for the next frame after the current index
 
     return prompt_series.iloc[next_prompt_start], blend_value
-
-
 
 

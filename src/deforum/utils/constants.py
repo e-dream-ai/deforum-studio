@@ -1,7 +1,9 @@
 import os
 import platform
 from dataclasses import dataclass
+
 from decouple import config
+
 
 def get_os():
     return {"Windows": "Windows", "Linux": "Linux", "Darwin": "Mac"}.get(platform.system(), "Unknown")
@@ -23,6 +25,7 @@ class AppConfig(LogConfig):
     settings_path: str
     presets_path: str
     model_dir: str
+    lora_dir: str
     other_model_dir: str
     output_dir: str
     video_dir: str
@@ -32,7 +35,7 @@ class AppConfig(LogConfig):
     projectm_executable: str
 
     @staticmethod
-    def load():
+    def load() -> "AppConfig":
         # The path under which all Deforum non-code assets will be stored (logs, outputs, models etc...)
         # defaults to <HOME>/deforum. Other paths configured below depend on this value unless overriden.
         default_root_path = os.path.join(os.path.expanduser('~'), 'deforum')
@@ -46,13 +49,16 @@ class AppConfig(LogConfig):
         default_src_path = os.path.dirname(deforum_dir)
         src_path = config('SRC_PATH', default_src_path)
 
+        model_dir = config('MODEL_PATH', default=os.path.join(root_path, "models"))
+
         return AppConfig(
             root_path = root_path,
             src_path = src_path,
             comfy_path = config('COMFY_PATH', default=os.path.join(src_path, "ComfyUI")),
             settings_path = config('SETTINGS_PATH', default=os.path.join(root_path, "settings")),
             presets_path =  config('PRESETS_PATH', default=os.path.join(root_path, "presets")),
-            model_dir = config('MODEL_PATH', default=os.path.join(root_path, "models")),
+            model_dir = model_dir,
+            lora_dir = config('LORA_PATH', default=os.path.join(model_dir, "loras")),
             other_model_dir = config('OTHER_MODEL_PATH', default=os.path.join(root_path, "models", "other")),
             output_dir = config('OUTPUT_PATH', default=os.path.join(root_path, "output", "deforum")),
             video_dir = config('VIDEO_PATH', default=os.path.join(root_path, "output", "video")),

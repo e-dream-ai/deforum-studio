@@ -47,9 +47,12 @@ Configuration options include:
 - `SETTINGS_PATH`: output directory for settings files. Default: `{ROOT_DIR}/settings`
 - `OUTPUT_PATH`: output directory for generation results (images, intermediaries etc...). Default: `{ROOT_DIR}/output`
 - `VIDEO_PATH`: output directory for videos. Default:  `{ROOT_DIR}/output/videos`
+- `LORA_PATH`: directory containing LoRAs named `<alias>.safetensors`. Default: `{ROOT_DIR}/models/loras`
 - `DEFORUM_LOG_LEVEL`: log level. Default: `DEBUG`.
 
 This is a **non-exhaustive** list. See `src/deforum/utils/constants.py` for more.
+
+LoRAs can be activated from every animation keyframe with `<lora:alias:strength>`. Multiple tags are supported, and all keyframes in one animation must use the same aliases and strengths.
 
 
 ## Unit testing
