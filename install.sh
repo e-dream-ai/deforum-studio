@@ -82,6 +82,6 @@ git submodule update --init --recursive
 # Create virtual environment and install dependencies
 python3 -m venv "$VENV_PATH"
 source "$VENV_PATH/bin/activate"
-pip install -e .
+pip install -e ".[full]"
 
 echo "Installation completed successfully."

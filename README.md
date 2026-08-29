@@ -31,7 +31,7 @@ On linux run bash start.sh
      ```
 3. Install the library with developer dependencies:
    ```bash
-   pip install -e .
+   pip install -e ".[dev,full]"
    ```
 
 ## Configuration
@@ -64,7 +64,7 @@ These tests run in CI on every commit on free hardware, so NEVER add unit tests 
 Run the following to install test dependencies:
 
 ```bash
-pip install -e .['dev']
+pip install -e ".[dev]"
 ```
 
 ### Execution
@@ -84,7 +84,7 @@ These tests should be fast enough to run frequently as part of your dev loop, bu
 Run the following to install test dependencies:
 
 ```bash
-pip install -e .['dev']
+pip install -e ".[dev]"
 ```
 
 ### Execution

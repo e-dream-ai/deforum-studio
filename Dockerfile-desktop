@@ -16,11 +16,8 @@ RUN git clone --branch dev-miklos-0503 https://github.com/deforum-studio/deforum
 # Change to the cloned directory
 WORKDIR /workdir/deforum
 
-# Install the project in editable mode with dev dependencies
-RUN pip install -e .[dev]
-
-# Install Python Qt6 for GUI applications
-RUN pip install PyQt6
+# Install the project in editable mode with desktop and dev dependencies
+RUN pip install -e ".[dev,full]"
 
 # Uninstall and reinstall OpenCV packages as needed
 RUN pip uninstall -y opencv-python opencv-python-headless
