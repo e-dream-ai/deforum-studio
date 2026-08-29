@@ -1,9 +1,9 @@
 import hashlib
 import os
 import subprocess
+import tempfile
 
 import requests
-from deforum.utils.download_util import load_file_from_url
 from deforum.utils.logging_config import logger
 from tqdm import tqdm
 
@@ -61,9 +61,37 @@ def checksum(filename, hash_factory=hashlib.blake2b, chunk_num_blocks=128):
 
 
 def download_file_with_checksum(url, expected_checksum, dest_folder, dest_filename):
+    os.makedirs(dest_folder, exist_ok=True)
     expected_full_path = os.path.join(dest_folder, dest_filename)
-    if not os.path.exists(expected_full_path) and not os.path.isdir(expected_full_path):
-        load_file_from_url(url=url, model_dir=dest_folder, file_name=dest_filename, progress=True)
-        if checksum(expected_full_path) != expected_checksum:
-            raise Exception(f"Error while downloading {dest_filename}.]nPlease manually download from: {url}\nAnd "
-                            f"place it in: {dest_folder}")
+    if os.path.isdir(expected_full_path):
+        raise IsADirectoryError(f"Model path is a directory: {expected_full_path}")
+    if os.path.isfile(expected_full_path):
+        if checksum(expected_full_path) == expected_checksum:
+            return expected_full_path
+        logger.warning(f"Checksum mismatch for existing model {expected_full_path}; downloading it again")
+
+    file_descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{dest_filename}.", suffix=".part", dir=dest_folder
+    )
+    os.close(file_descriptor)
+
+    try:
+        with requests.get(url, stream=True, timeout=(30, 300)) as response:
+            response.raise_for_status()
+            with open(temporary_path, "wb") as handle:
+                for chunk in response.iter_content(chunk_size=1024 * 1024):
+                    if chunk:
+                        handle.write(chunk)
+
+        actual_checksum = checksum(temporary_path)
+        if actual_checksum != expected_checksum:
+            raise RuntimeError(
+                f"Checksum mismatch for {dest_filename}: expected {expected_checksum}, "
+                f"got {actual_checksum}"
+            )
+
+        os.replace(temporary_path, expected_full_path)
+        return expected_full_path
+    finally:
+        if os.path.exists(temporary_path):
+            os.unlink(temporary_path)
