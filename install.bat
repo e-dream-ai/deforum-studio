@@ -71,6 +71,6 @@ REM Create virtual environment and install dependencies
 pip install virtualenv
 python -m virtualenv "%VENV_PATH%" -p python3.10
 call "%VENV_PATH%\Scripts\activate.bat"
-pip install -e ".[full]"
+pip install -e .
 
 echo Installation completed successfully.

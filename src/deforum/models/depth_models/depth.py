@@ -27,34 +27,21 @@ class DepthModel:
         depth_algorithm = kwargs.get('depth_algorithm', 'Midas-3-Hybrid')
         Width, Height = kwargs.get('Width', 512), kwargs.get('Height', 512)
         midas_weight = kwargs.get('midas_weight', 0.2)
-        instance = cls._instance
-        model_switched = instance is not None and getattr(instance, 'depth_algorithm', None) != depth_algorithm
-        resolution_changed = instance is not None and (
-            getattr(instance, 'Width', None) != Width or getattr(instance, 'Height', None) != Height
-        )
+        model_switched = cls._instance and cls._instance.depth_algorithm != depth_algorithm
+        resolution_changed = cls._instance and (cls._instance.Width != Width or cls._instance.Height != Height)
         zoe_algorithm = 'zoe' in depth_algorithm.lower()
+        model_deleted = None
 
         should_reload = (
-                    instance is None or model_switched or (zoe_algorithm and resolution_changed))
+                    cls._instance is None or model_deleted or model_switched or (zoe_algorithm and resolution_changed))
 
         if should_reload:
-            instance = super().__new__(cls)
-            try:
-                instance._initialize(models_path=args[0], device=args[1], half_precision=True,
-                                     keep_in_vram=keep_in_vram, depth_algorithm=depth_algorithm,
-                                     Width=Width, Height=Height, midas_weight=midas_weight)
-            except Exception:
-                cls._instance = None
-                raise
-            cls._instance = instance
-        elif getattr(instance, 'should_delete', False) and keep_in_vram:
-            try:
-                instance._initialize(models_path=args[0], device=args[1], half_precision=True,
-                                     keep_in_vram=keep_in_vram, depth_algorithm=depth_algorithm,
-                                     Width=Width, Height=Height, midas_weight=midas_weight)
-            except Exception:
-                cls._instance = None
-                raise
+            cls._instance = super().__new__(cls)
+            cls._instance._initialize(models_path=args[0], device=args[1], half_precision=True, keep_in_vram=keep_in_vram,
+                                      depth_algorithm=depth_algorithm, Width=Width, Height=Height,
+                                      midas_weight=midas_weight)
+        elif cls._instance.should_delete and keep_in_vram:
+            cls._instance._initialize(models_path=args[0], device=args[1], half_precision=True, keep_in_vram=keep_in_vram, depth_algorithm=depth_algorithm, Width=Width, Height=Height, midas_weight=midas_weight)
         cls._instance.should_delete = not keep_in_vram
         return cls._instance
 

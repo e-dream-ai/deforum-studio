@@ -2,82 +2,120 @@ import platform
 import re
 import sys
 from distutils.core import Command
-from pathlib import Path
-
 from setuptools import find_packages, setup
 
-python_version = ".".join(map(str, sys.version_info[:2]))
+python_version = '.'.join(map(str, sys.version_info[:2]))
 os_name = platform.system().lower()
 
-REQUIREMENTS_DIR = Path(__file__).resolve().parent / "requirements"
-
-
-def read_requirement_group(name):
-    path = REQUIREMENTS_DIR / f"{name}.txt"
-    return [
-        line
-        for raw_line in path.read_text(encoding="utf-8").splitlines()
-        if (line := raw_line.strip()) and not line.startswith("#")
-    ]
-
-
-DEPENDENCY_GROUPS = {
-    name: read_requirement_group(name)
-    for name in (
-        "comfy",
-        "core",
-        "dev",
-        "serverless",
-        "tensorrt",
-        "ui",
-        "vision",
-        "web",
-    )
+torch_package_urls = {
+    '3.10': {
+        'linux': 'torch-2.8.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp310-cp310-win_amd64.whl'
+    },
+    '3.11': {
+        'linux': 'torch-2.8.0%2Bcu128-cp311-cp311-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp311-cp311-win_amd64.whl'
+    },
+    '3.8': {
+        'linux': 'torch-2.8.0%2Bcu128-cp38-cp38-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp38-cp38-win_amd64.whl'
+    },
+    '3.9': {
+        'linux': 'torch-2.8.0%2Bcu128-cp39-cp39-manylinux_2_28_x86_64.whl',
+        'windows': 'torch-2.8.0%2Bcu128-cp39-cp39-win_amd64.whl'
+    }
 }
 
-torch_pins = {
-    requirement.split("==", maxsplit=1)[0]: requirement.split("==", maxsplit=1)[1]
-    for requirement in read_requirement_group("torch")
+torchvision_package_urls = {
+    '3.10': {
+        'linux': 'torchvision-0.23.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp310-cp310-win_amd64.whl'
+    },
+    '3.11': {
+        'linux': 'torchvision-0.23.0%2Bcu128-cp311-cp311-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp311-cp311-win_amd64.whl'
+    },
+    '3.8': {
+        'linux': 'torchvision-0.23.0%2Bcu128-cp38-cp38-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp38-cp38-win_amd64.whl'
+    },
+    '3.9': {
+        'linux': 'torchvision-0.23.0%2Bcu128-cp39-cp39-manylinux_2_28_x86_64.whl',
+        'windows': 'torchvision-0.23.0%2Bcu128-cp39-cp39-win_amd64.whl'
+    }
 }
-torch_version = torch_pins["torch"]
-torchvision_version = torch_pins["torchvision"]
 
-python_tags = {
-    "3.8": "cp38",
-    "3.9": "cp39",
-    "3.10": "cp310",
-    "3.11": "cp311",
-}
-if python_version not in python_tags:
+if python_version in torch_package_urls:
+    torch_url = torch_package_urls[python_version][os_name]
+    torchvision_url = torchvision_package_urls[python_version][os_name]
+else:
     sys.exit(f"Unsupported Python version: {python_version}")
 
-python_tag = python_tags[python_version]
-if os_name == "linux":
-    wheel_platform = "manylinux_2_28_x86_64"
-elif os_name == "windows":
-    wheel_platform = "win_amd64"
-else:
-    wheel_platform = None
+torch_path = f"https://download.pytorch.org/whl/cu128/{torch_url}"
+torchvision_path = f"https://download.pytorch.org/whl/cu128/{torchvision_url}"
 
-if wheel_platform is None:
-    torch_requirement = f"torch=={torch_version}"
-    torchvision_requirement = f"torchvision=={torchvision_version}"
-else:
-    torch_filename = (
-        f"torch-{torch_version}%2Bcu128-{python_tag}-{python_tag}-{wheel_platform}.whl"
-    )
-    torchvision_filename = (
-        f"torchvision-{torchvision_version}%2Bcu128-"
-        f"{python_tag}-{python_tag}-{wheel_platform}.whl"
-    )
-    torch_requirement = f"torch@https://download.pytorch.org/whl/cu128/{torch_filename}"
-    torchvision_requirement = (
-        f"torchvision@https://download.pytorch.org/whl/cu128/{torchvision_filename}"
-    )
-
-_deps = [torch_requirement, torchvision_requirement]
-for dependency_group in DEPENDENCY_GROUPS.values():
-    _deps.extend(dependency_group)
+# IMPORTANT:
+# 1. all dependencies should be listed here with their version requirements if any
+# 2. once modified, run: `make deps_table_update` to update src/deforum/dependency_versions_table.py
+_deps = [
+    f'torch@{torch_path}',
+    f'torchvision@{torchvision_path}',
+    'einops>=0.6.0',
+    'numexpr>=2.8.4',
+    'matplotlib>=3.7.1',
+    'pandas>=1.5.3',
+    'av>=10.0.0',
+    'pims>=0.6.1',
+    'imageio-ffmpeg>=0.4.8',
+    'rich>=13.3.2',
+    'gdown>=4.7.1',
+    'py3d>=0.0.87',
+    'librosa>=0.10.0.post2',
+    'numpy==1.26.4',
+    'opencv-python-headless',
+    'timm==1.0.20',
+    'transformers>=4.40.2,<4.44.0',
+    'omegaconf>=2.3.0',
+    'aiohttp>=3.9.3',
+    'psutil>=5.9.6',
+    'clip-interrogator>=0.6.0',
+    'streamlit>=1.27.2',
+    'torchsde>=0.2.5',
+    'fastapi>=0.100.0',
+    'diffusers==0.30.0',
+    'compel==2.0.3',
+    'accelerate>=0.29.3',
+    'python-decouple>=3.8',
+    'mutagen>=1.47.0',
+    'imageio[ffmpeg]>=2.34.1',
+    'xformers>=0.0.26.post1',
+    'tensorrt>=10.0.1',
+    'onnx_graphsurgeon>=0.5.2',
+    'onnx>=1.16.0',
+    'zstandard>=0.22.0',
+    'polygraphy>=0.49.9',
+    'kornia>=0.7.2',
+    'wheel>=0.43.0',
+    'loguru>=0.7.2',
+    'scikit-image>=0.21.0',
+    'scipy>=1.11.4',
+    'segment-anything>=1.0',
+    'piexif>=1.1.3',
+    'GitPython>=3.1.43',
+    'qtpy>=2.4.1',
+    'pyqt6>=6.5.0',
+    'pyqt6-qt6>=6.5.0',
+    'pyqtgraph>=0.13.7',
+    'pytest>=8.2.0',
+    'ruff>=0.4.4',
+    'pylint>=3.2.1',
+    'syrupy>=4.6.1',
+    'pytest-cov>=5.0.0',
+    'coverage>=7.5.2',
+    'librosa>=0.10.0.post2',
+    'contexttimer>=0.3.3',
+    'pydub>=0.23.0'
+]
 
 # this is a lookup table with items like:
 #
@@ -107,6 +145,10 @@ deps = {match[0]: x for x in _deps for match in [pattern.findall(x)] if match}
 # print(" ".join([ deps[x] for x in sys.argv[1:]]))' tokenizers datasets)
 #
 
+def deps_list(*pkgs):
+    return [deps[pkg] for pkg in pkgs]
+
+
 class DepsTableUpdateCommand(Command):
     """
     A custom distutils command that updates the dependency table.
@@ -129,8 +171,8 @@ class DepsTableUpdateCommand(Command):
         entries = "\n".join([f'    "{k}": "{v}",' for k, v in deps.items()])
         content = [
             "# THIS FILE HAS BEEN AUTOGENERATED. To update:",
-            "# 1. modify the files under requirements/",
-            "# 2. run `python setup.py deps_table_update`",
+            "# 1. modify the `_deps` dict in setup.py",
+            "# 2. run `make deps_table_update``",
             "deps = {",
             entries,
             "}",
@@ -142,23 +184,71 @@ class DepsTableUpdateCommand(Command):
             f.write("\n".join(content))
 
 
-install_requires = [
-    torch_requirement,
-    torchvision_requirement,
-    *DEPENDENCY_GROUPS["core"],
-]
+extras = {}
 
-extras = {
-    name: list(requirements)
-    for name, requirements in DEPENDENCY_GROUPS.items()
-    if name != "core"
-}
-extras["full"] = list(
-    dict.fromkeys(
-        requirement
-        for name in ("tensorrt", "ui", "vision", "web")
-        for requirement in DEPENDENCY_GROUPS[name]
-    )
+install_requires = deps_list('torch',
+                             'torchvision',
+                             'einops',
+                             'numexpr',
+                             'matplotlib',
+                             'pandas',
+                             'av',
+                             'pims',
+                             'imageio-ffmpeg',
+                             'rich',
+                             'gdown',
+                             'py3d',
+                             'librosa',
+                             'numpy',
+                             'opencv-python-headless',
+                             'timm',
+                             'transformers',
+                             'omegaconf',
+                             'aiohttp',
+                             'scipy',
+                             'psutil',
+                             'clip-interrogator',
+                             'streamlit',
+                             'torchsde',
+                             'fastapi',
+                             'diffusers',
+                             'compel',
+                             'accelerate',
+                             'python-decouple',
+                             'imageio[ffmpeg]',
+                             'xformers',
+                             'kornia',
+                             'tensorrt',
+                             'onnx_graphsurgeon',
+                             'zstandard',
+                             'onnx',
+                             'polygraphy',
+                             'wheel',
+                             'loguru',
+                             'mutagen',
+                             'scikit-image',
+                             'segment-anything',
+                             'piexif',
+                             'GitPython',
+                             'librosa',
+                             'contexttimer',
+                             'pydub'
+                             )
+
+extras['dev'] = deps_list('pytest', 'ruff', 'pylint', 'syrupy', 'pytest-cov', 'coverage')
+
+extras['comfy'] = deps_list(
+    'einops',
+    'numexpr',
+    'matplotlib',
+    'pandas',
+    'av',
+    'pims',
+    'imageio-ffmpeg',
+    'rich',
+    'gdown',
+    'py3d',
+    'librosa',
 )
 
 setup(

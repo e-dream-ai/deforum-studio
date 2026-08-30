@@ -3,6 +3,7 @@ import re
 import shutil
 
 import numexpr
+import numpy as np
 import pandas as pd
 
 from .constants import get_os
@@ -88,7 +89,7 @@ def interpolate_prompts(animation_prompts, max_frames):
     sorted_prompts = sorted(parsed_animation_prompts.items(), key=lambda item: int(item[0]))
 
     # Setup container for interpolated prompts
-    prompt_series = pd.Series(index=range(max_frames), dtype=object)
+    prompt_series = pd.Series([np.nan for a in range(max_frames)])
 
     # For every keyframe prompt except the last
     for i in range(0, len(sorted_prompts) - 1):
