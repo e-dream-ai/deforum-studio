@@ -170,12 +170,21 @@ class ParseqAbstractDecorator():
         
         required_frames = self.adapter.anim_args.max_frames
 
-        key_frame_series = pd.Series([np.nan for a in range(required_frames)])
+        first_value = next(
+            (
+                frame.get(seriesName)
+                for frame in self.adapter.rendered_frames
+                if frame.get(seriesName) is not None
+            ),
+            None,
+        )
+        series_dtype = object if isinstance(first_value, str) else float
+        key_frame_series = pd.Series(np.nan, index=range(required_frames), dtype=series_dtype)
         
         for frame in self.adapter.rendered_frames:
             frame_idx = frame['frame']
             if frame_idx < required_frames:                
-                if not np.isnan(key_frame_series[frame_idx]):
+                if pd.notna(key_frame_series[frame_idx]):
                     logging.warning(f"Duplicate frame definition {frame_idx} detected for data {seriesName}. Latest wins.")        
                 key_frame_series[frame_idx] = frame[seriesName]
 
@@ -317,4 +326,3 @@ class ParseqLooperKeysDecorator(ParseqAbstractDecorator):
         self.blendFactorSlope_series = super().parseq_to_series('guided_blendFactorSlope')
         self.tweening_frames_schedule_series = super().parseq_to_series('guided_tweening_frames')
         self.color_correction_factor_series = super().parseq_to_series('guided_color_correction_factor')
-

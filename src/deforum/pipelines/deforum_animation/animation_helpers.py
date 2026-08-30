@@ -1397,7 +1397,8 @@ class FrameInterpolator:
         return value.replace("'", "").replace('"', "").replace('(', "").replace(')', "")
 
     def get_inbetweens(self, key_frames, integer=False, interp_method='Linear', is_single_string=False):
-        key_frame_series = pd.Series([np.nan for a in range(self.max_frames)])
+        series_dtype = object if is_single_string else float
+        key_frame_series = pd.Series(np.nan, index=range(self.max_frames), dtype=series_dtype)
         # get our ui variables set for numexpr.evaluate
         bpm = self.settings.get("bpm", 120)
         fps = self.settings.get("fps", 24)
@@ -1425,9 +1426,10 @@ class FrameInterpolator:
         for i in range(0, self.max_frames):
             if i in key_frames:
                 value = key_frames[i]
-                value_is_number = check_is_number(self.sanitize_value(value))
+                sanitized_value = self.sanitize_value(value)
+                value_is_number = check_is_number(sanitized_value)
                 if value_is_number:  # if it's only a number, leave the rest for the default interpolation
-                    key_frame_series[i] = self.sanitize_value(value)
+                    key_frame_series[i] = float(sanitized_value)
             if not value_is_number and value is not None:
                 local_variables = self.prepare_local_variables(current_frame=i, bpm=bpm, fps=fps,
                                                                beat_offset=beat_offset, local_constants=local_constants,

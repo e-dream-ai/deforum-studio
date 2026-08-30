@@ -240,7 +240,7 @@ class DeforumAnimationPipeline(DeforumBase):
             self.gen.seed = secrets.randbelow(18446744073709551615)
         self.gen.keys = DeforumAnimKeys(self.gen, self.gen.seed) if not self.parseq_adapter.use_parseq else self.parseq_adapter.anim_keys
         self.gen.loopSchedulesAndData = LooperAnimKeys(self.gen, self.gen, self.gen.seed) if not self.parseq_adapter.use_parseq else self.parseq_adapter.looper_keys
-        prompt_series = pd.Series([np.nan for a in range(self.gen.max_frames)])
+        prompt_series = pd.Series(index=range(self.gen.max_frames), dtype=object)
 
         if self.gen.prompts is not None:
             if isinstance(self.gen.prompts, dict):
@@ -523,7 +523,7 @@ class DeforumAnimationPipeline(DeforumBase):
             if hasattr(self, 'gen'):
                 self.gen.update_from_kwargs(**kwargs)
                 self.gen.keys = DeforumAnimKeys(self.gen, self.gen.seed) if not self.parseq_adapter.use_parseq else self.parseq_adapter.anim_keys
-                prompt_series = pd.Series([np.nan for a in range(self.gen.max_frames + 5)])
+                prompt_series = pd.Series(index=range(self.gen.max_frames + 5), dtype=object)
 
                 if self.gen.prompts is not None:
                     if isinstance(self.gen.prompts, dict):
@@ -891,5 +891,4 @@ def get_next_prompt_and_blend(current_index, prompt_series, blend_type="exponent
     blend_value = blend_values[1]  # Blend value for the next frame after the current index
 
     return prompt_series.iloc[next_prompt_start], blend_value
-
 
